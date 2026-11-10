@@ -12,7 +12,10 @@
 @media (min-width:1025px){.hero-h1{font-size:64px}.hero-sub{font-size:20px;line-height:30px}}
 
 .hero-d1{animation-delay:.3s}
-.hero-eyebrow{display:flex;align-items:center;justify-content:center;gap:.6em;flex-wrap:wrap;margin:0 auto 14px;font-size:16px;line-height:1.5;font-weight:300;color:#fff}
+.hero-eyebrow{display:flex;align-items:center;justify-content:center;gap:.6em;flex-wrap:wrap;margin:0 auto 30px;font-size:16px;line-height:1.5;font-weight:300;color:#fff}
 .hero-eyebrow img{height:2.2em;width:auto;display:block}
 @media (min-width:768px){.hero-eyebrow{font-size:18px}}
-@media (min-width:1025px){.hero-eyebrow{font-size:20px;margin-bottom:20px}}
+@media (min-width:1025px){.hero-eyebrow{font-size:20px;margin-bottom:40px}}
+
+.hdr-avg{height:13px;width:auto;margin-left:.5rem;align-self:center;flex-shrink:0}
+@media (min-width:640px){.hdr-avg{height:20px;margin-left:.7rem}}
