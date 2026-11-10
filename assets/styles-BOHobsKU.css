@@ -19,3 +19,11 @@
 
 .hdr-avg{height:13px;width:auto;margin-left:.5rem;align-self:center;flex-shrink:0}
 @media (min-width:640px){.hdr-avg{height:20px;margin-left:.7rem}}
+@media (max-width:639px){
+header.rounded-full{padding-left:14px;padding-right:8px}
+header.rounded-full>a .text-xl{font-size:15px}
+header.rounded-full>a .text-xs{font-size:9px;padding-left:6px;margin-left:6px}
+header.rounded-full>div>a{padding:8px 11px;gap:6px;font-size:10px;white-space:nowrap}
+header.rounded-full>div>a svg{display:none}
+.hdr-avg{height:11px;margin-left:.4rem}
+}
