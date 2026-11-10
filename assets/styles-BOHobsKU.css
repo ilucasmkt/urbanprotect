@@ -10,3 +10,9 @@
 .hero-sub{font-size:16px;line-height:1.5;max-width:917px}
 @media (min-width:768px){.hero-h1{font-size:44px}.hero-sub{font-size:18px}}
 @media (min-width:1025px){.hero-h1{font-size:64px}.hero-sub{font-size:20px;line-height:30px}}
+
+.hero-d1{animation-delay:.3s}
+.hero-eyebrow{display:flex;align-items:center;justify-content:center;gap:.6em;flex-wrap:wrap;margin:0 auto 14px;font-size:16px;line-height:1.5;font-weight:300;color:#fff}
+.hero-eyebrow img{height:2.2em;width:auto;display:block}
+@media (min-width:768px){.hero-eyebrow{font-size:18px}}
+@media (min-width:1025px){.hero-eyebrow{font-size:20px;margin-bottom:20px}}
