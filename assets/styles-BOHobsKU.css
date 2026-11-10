@@ -5,3 +5,8 @@
 .hero-down{opacity:0;animation:heroDown .9s cubic-bezier(.22,1,.36,1) .15s forwards}
 .hero-d2{animation-delay:.45s}.hero-d3{animation-delay:.75s}.hero-d4{animation-delay:1.05s}
 @media (prefers-reduced-motion:reduce){.hero-down{opacity:1;animation:none}}
+
+.hero-h1{font-size:25px;line-height:1.2;max-width:1000px}
+.hero-sub{font-size:16px;line-height:1.5;max-width:917px}
+@media (min-width:768px){.hero-h1{font-size:44px}.hero-sub{font-size:18px}}
+@media (min-width:1025px){.hero-h1{font-size:64px}.hero-sub{font-size:20px;line-height:30px}}
