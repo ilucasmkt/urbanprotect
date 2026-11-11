@@ -27,3 +27,9 @@ header.rounded-full>div>a{padding:8px 11px;gap:6px;font-size:10px;white-space:no
 header.rounded-full>div>a svg{display:none}
 .hdr-avg{height:11px;margin-left:.4rem}
 }
+
+.hero-h1{font-family:Poppins,sans-serif;font-weight:600;text-transform:none;letter-spacing:0}
+.hero-h1 span{font-weight:900}
+.hero-h1-logo{display:inline-block;height:.85em;width:auto;vertical-align:-.06em;margin-left:.05em}
+.hero-sub,.hero-eyebrow{font-family:Poppins,sans-serif}
+.hero-sub{font-weight:300}
