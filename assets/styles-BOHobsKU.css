@@ -43,3 +43,4 @@ header.rounded-full>div>a svg{display:none}
 .ppf-sound[data-sound=on] .s-on{display:block}
 .ppf-sound[data-sound=on] .s-off{display:none}
 .ppf-sound[data-sound=on]{animation:none;opacity:.55}
+.ppf-sound span.s-off{display:block;position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:12px;white-space:nowrap;color:#fff;font:600 13px/1 Poppins,sans-serif;letter-spacing:.02em;text-shadow:0 1px 8px rgba(0,0,0,.9)}
