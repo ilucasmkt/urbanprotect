@@ -44,3 +44,8 @@ header.rounded-full>div>a svg{display:none}
 .ppf-sound[data-sound=on] .s-off{display:none}
 .ppf-sound[data-sound=on]{animation:none;opacity:.55}
 .ppf-sound span.s-off{display:block;position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:12px;white-space:nowrap;color:#fff;font:600 13px/1 Poppins,sans-serif;letter-spacing:.02em;text-shadow:0 1px 8px rgba(0,0,0,.9)}
+
+.ppf-ov{font-family:"SF Pro Display",-apple-system,BlinkMacSystemFont,Inter,"Segoe UI",sans-serif;margin:0;color:#fff;text-transform:none}
+.ppf-ov-t{font-size:26px;font-weight:700;letter-spacing:-.01em;line-height:1}
+.ppf-ov-logo{display:inline-block;height:20px;width:auto;vertical-align:-1px;margin-left:8px}
+.ppf-ov-s{display:block;margin-top:6px;font-size:16px;font-weight:400;line-height:1.35;color:rgba(255,255,255,.92);letter-spacing:-.005em}
