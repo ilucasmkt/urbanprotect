@@ -34,3 +34,9 @@ header.rounded-full>div>a svg{display:none}
 .hero-h1-logo{display:inline-block;height:.55em;width:auto;vertical-align:.02em;margin-left:.1em}
 .hero-sub,.hero-eyebrow{font-family:"SF Pro Display",-apple-system,BlinkMacSystemFont,Inter,"Segoe UI",sans-serif}
 .hero-sub{font-weight:400;letter-spacing:-.005em}
+
+.ppf-sound{position:absolute;right:14px;bottom:16px;z-index:20;display:flex;align-items:center;gap:6px;padding:9px 13px;border-radius:999px;background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.35);color:#fff;font:600 12px/1 Poppins,sans-serif;cursor:pointer}
+.ppf-sound svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ppf-sound .s-on{display:none}
+.ppf-sound[data-sound=on] .s-on{display:inline-flex}
+.ppf-sound[data-sound=on] .s-off{display:none}
