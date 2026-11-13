@@ -12,7 +12,7 @@
   var CONFIG = {
     ga4: 'G-FJNFZPMCC9',
     // Google Ads: preencher quando a conversão for criada. Vazio = não envia ao Ads.
-    adsId: '',        // ex.: 'AW-123456789'
+    adsId: 'AW-18291598675',
     adsLabel: ''      // ex.: 'AbCdEfGhIjK' (texto depois da barra em AW-123456789/AbCdEfGhIjK)
   };
 
