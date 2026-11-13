@@ -20,7 +20,14 @@
     redirectToWhatsApp: true,
     // Quando existir um endereço de recebimento (CRM / API de Conversões), coloque aqui.
     // O lead é enviado por POST em JSON. Vazio = não envia para lugar nenhum.
-    endpoint: '',
+    endpoint: '/api/lead',
+    // Regra de qualificação (PROVISÓRIA — aguardando o critério definitivo).
+    // Só quem passa nela é enviado ao Meta (Pixel + API de Conversões) como "Lead".
+    // Recebe as respostas { id_da_pergunta: 'resposta' } e devolve true/false.
+    qualify: function (a) {
+      var semPressa = a.prazo === 'Estou só pesquisando';
+      return !semPressa;
+    },
     fields: [
       { id: 'nome', label: 'Seu nome', type: 'text', required: true, placeholder: 'Como podemos te chamar?', autocomplete: 'name' },
       { id: 'whatsapp', label: 'Seu WhatsApp', type: 'tel', required: true, placeholder: '(11) 91234-5678', autocomplete: 'tel' },
@@ -42,6 +49,15 @@
     onOpen: function () {},
     onSubmit: function () {}
   };
+
+  function cookie(n) {
+    var m = document.cookie.match(new RegExp('(?:^|; )' + n + '=([^;]*)'));
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  function fbcFromUrl() {
+    var m = location.search.match(/[?&]fbclid=([^&]+)/);
+    return m ? 'fb.1.' + Date.now() + '.' + m[1] : '';
+  }
 
   var realOpen = window.open.bind(window);
   var WA_RE = /^https?:\/\/(wa\.me|api\.whatsapp\.com)\//i;
@@ -176,11 +192,21 @@
     if (!answers) { errorBox.textContent = 'Confira os campos destacados.'; return; }
     errorBox.textContent = '';
     var text = buildMessage(answers);
-    var lead = { answers: answers, text: text, createdAt: new Date().toISOString(), page: location.href, clickText: currentText };
+    var qualified = false;
+    try { qualified = !!CONFIG.qualify(answers); } catch (err) {}
+    var eventId = 'lead-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+    var lead = { answers: answers, text: text, createdAt: new Date().toISOString(), page: location.href, clickText: currentText, qualified: qualified, eventId: eventId };
     try { window.UP_LEAD_HOOKS.onSubmit(lead); } catch (err) {}
+    // Pixel no navegador (só se qualificado) + mesmo evento pelo servidor (API de Conversões).
+    if (qualified && typeof window.fbq === 'function') {
+      try { window.fbq('track', 'Lead', { content_name: answers.servico || '', lead_quality: 'qualificado' }, { eventID: eventId }); } catch (err) {}
+    }
     if (CONFIG.endpoint) {
       try {
-        fetch(CONFIG.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lead), keepalive: true });
+        fetch(CONFIG.endpoint, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+          body: JSON.stringify({ answers: answers, qualified: qualified, eventId: eventId, sourceUrl: location.href, fbp: cookie('_fbp'), fbc: cookie('_fbc') || fbcFromUrl() })
+        });
       } catch (err) {}
     }
     close();
