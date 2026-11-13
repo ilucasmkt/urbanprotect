@@ -36,8 +36,14 @@
     },
     // Só quem aceita o valor é qualificado (vai ao Meta como "Lead").
     qualify: function (a) { return a.valor === CONFIG.price.yes; },
-    // Quente = quer agendar nos próximos dias. Vai junto no evento, para segmentar depois.
-    temperature: function (a) { return a.prioridade === 'Pretendo agendar nos próximos dias' ? 'quente' : 'morno'; },
+    // Temperatura (vai no aviso do grupo e no evento do Meta):
+    //   quente = concordou com o valor e quer agendar nos próximos dias
+    //   morno  = concordou com o valor mas ainda está pesquisando
+    //   frio   = não concordou com o valor (não é enviado ao Meta, só avisa o grupo)
+    temperature: function (a) {
+      if (a.valor !== CONFIG.price.yes) return 'frio';
+      return a.prioridade === 'Pretendo agendar nos próximos dias' ? 'quente' : 'morno';
+    },
     steps: [
       { id: 'prioridade', type: 'choice', label: 'Em que momento você está?', options: ['Ainda estou pesquisando', 'Pretendo agendar nos próximos dias'] },
       { id: 'servico', type: 'choice', label: 'O que você procura?', options: ['PPF completo', 'PPF frontal', 'Quero orientação'] },
@@ -164,7 +170,7 @@
       b.addEventListener('click', function () {
         state.answers.valor = label;
         if (label === P.yes) go('contact');
-        else { gtagEvent('lead_nao_qualificado', { motivo: 'valor' }); go('thanks'); }
+        else { gtagEvent('lead_nao_qualificado', { motivo: 'valor' }); sendCold(); go('thanks'); }
       });
       opts.appendChild(b);
     });
@@ -217,6 +223,21 @@
     ].join('\n');
   }
 
+  function post(payload) {
+    if (!CONFIG.endpoint) return;
+    try {
+      fetch(CONFIG.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true, body: JSON.stringify(payload) });
+    } catch (e) {}
+  }
+
+  // Quem não concorda com o valor não deixa contato: só avisa o grupo (lead frio), sem Meta.
+  function sendCold() {
+    var a = state.answers;
+    var eventId = 'frio-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+    try { window.UP_LEAD_HOOKS.onSubmit({ answers: a, qualified: false, temperature: 'frio', eventId: eventId, page: location.href }); } catch (e) {}
+    post({ answers: a, qualified: false, temperature: 'frio', eventId: eventId, sourceUrl: location.href });
+  }
+
   function submit() {
     var a = state.answers, qualified = false, temp = 'morno';
     try { qualified = !!CONFIG.qualify(a); temp = CONFIG.temperature(a); } catch (e) {}
@@ -228,14 +249,7 @@
     if (qualified && typeof window.fbq === 'function') {
       try { window.fbq('track', 'Lead', { content_name: a.servico || '', lead_quality: 'qualificado', lead_temperature: temp }, { eventID: eventId }); } catch (e) {}
     }
-    if (CONFIG.endpoint) {
-      try {
-        fetch(CONFIG.endpoint, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
-          body: JSON.stringify({ answers: a, qualified: qualified, temperature: temp, eventId: eventId, sourceUrl: location.href, fbp: cookie('_fbp'), fbc: cookie('_fbc') || fbcFromUrl() })
-        });
-      } catch (e) {}
-    }
+    post({ answers: a, qualified: qualified, temperature: temp, eventId: eventId, sourceUrl: location.href, fbp: cookie('_fbp'), fbc: cookie('_fbc') || fbcFromUrl() });
     close();
     if (CONFIG.redirectToWhatsApp) realOpen('https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(text), '_blank');
   }

@@ -1,15 +1,26 @@
-// Recebe o lead do formulário (/forms) e, se for qualificado, envia o evento "Lead"
-// para a API de Conversões do Meta (servidor -> Meta).
+// Recebe cada resposta do formulário (/forms) e faz duas coisas:
+//   1) SEMPRE avisa o grupo de WhatsApp da Urban Protect (pelo CRM de avisos),
+//      com a temperatura do lead: quente, morno ou frio;
+//   2) SÓ SE o lead for qualificado (concordou com o valor) envia o evento "Lead"
+//      para a API de Conversões do Meta.
 //
 // Variáveis de ambiente (configuradas na Vercel, NUNCA no código):
-//   META_CAPI_TOKEN        token de acesso do Pixel (obrigatório)
-//   META_TEST_EVENT_CODE   código do "Testar eventos" do Gerenciador (ex.: TEST1234).
-//                          Enquanto existir, os eventos aparecem só na aba de testes e
-//                          NÃO contam nas campanhas. Apague a variável para valer de verdade.
+//   META_CAPI_TOKEN        token de acesso do Pixel
+//   META_TEST_EVENT_CODE   código do "Testar eventos" (ex.: TEST4053). Enquanto existir, os
+//                          eventos aparecem só na aba de testes e NÃO contam nas campanhas.
+//   URBAN_LEAD_SECRET      chave do aviso no grupo (a mesma configurada no CRM)
 const crypto = require('crypto');
 
 const PIXEL_ID = '1483951748129189';
 const API_VERSION = 'v21.0';
+const NOTIFY_URL = 'https://app.autowisebrasil.com.br/api/public/urban-lead';
+const TIMEOUT_MS = 7000;
+
+const TEMP = {
+  quente: '🔥 Quente',
+  morno: '⚡ Morno',
+  frio: '❄️ Frio'
+};
 
 const sha256 = (v) => crypto.createHash('sha256').update(String(v).trim().toLowerCase()).digest('hex');
 
@@ -20,28 +31,49 @@ function normalizePhone(raw) {
 }
 
 function clean(v, max) {
-  return typeof v === 'string' ? v.slice(0, max || 200) : '';
+  return typeof v === 'string' ? v.trim().slice(0, max || 200) : '';
 }
 
-module.exports = async function handler(req, res) {
-  res.setHeader('Cache-Control', 'no-store');
-  if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'method' });
+function buildGroupMessage(a, temperature, qualified, phone) {
+  const lines = ['🔔 *Novo lead — Urban Protect PPF*', ''];
+  lines.push('🌡️ *Temperatura:* ' + (TEMP[temperature] || temperature));
+  if (a.nome) lines.push('👤 *Nome:* ' + a.nome);
+  if (phone) {
+    lines.push('📱 *WhatsApp:* ' + (a.whatsapp || phone));
+    lines.push('💬 https://wa.me/' + phone);
+  } else {
+    lines.push('📵 *Contato:* não deixou (não concordou com o valor)');
+  }
+  if (a.veiculo) lines.push('🚗 *Carro:* ' + a.veiculo);
+  if (a.servico) lines.push('🛡️ *Interesse:* ' + a.servico);
+  if (a.prioridade) lines.push('⏱️ *Momento:* ' + a.prioridade);
+  lines.push('💰 *Valor (a partir de R$ 7.600):* ' + (qualified ? '✅ concordou' : '❌ não concordou'));
+  lines.push('📍 *Origem:* Meta Ads — formulário do site');
+  if (qualified) lines.push('📣 Marcado como Lead no Meta');
+  return lines.join('\n');
+}
 
-  let body = req.body;
-  if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
-  body = body || {};
-  const answers = body.answers || {};
-  const phone = normalizePhone(answers.whatsapp);
-  const name = clean(answers.nome, 120);
-  if (!phone || !name) return res.status(400).json({ ok: false, error: 'dados' });
+async function notifyGroup(text) {
+  const secret = process.env.URBAN_LEAD_SECRET;
+  if (!secret) return { ok: false, error: 'sem-chave-grupo' };
+  try {
+    const r = await fetch(NOTIFY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': secret },
+      body: JSON.stringify({ text }),
+      signal: AbortSignal.timeout(TIMEOUT_MS)
+    });
+    return { ok: r.ok, status: r.status };
+  } catch (e) {
+    return { ok: false, error: 'rede' };
+  }
+}
 
-  // Só vai para o Meta quem o formulário marcou como qualificado.
-  if (!body.qualified) return res.status(200).json({ ok: true, sent: false, reason: 'nao-qualificado' });
-
+async function sendToMeta(req, body, a, phone, temperature) {
   const token = process.env.META_CAPI_TOKEN;
-  if (!token) return res.status(500).json({ ok: false, error: 'sem-token' });
+  if (!token) return { ok: false, error: 'sem-token' };
 
-  const parts = name.split(/\s+/);
+  const parts = a.nome.split(/\s+/);
   const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || (req.socket && req.socket.remoteAddress) || '';
   const userData = {
     ph: [sha256(phone)],
@@ -61,10 +93,10 @@ module.exports = async function handler(req, res) {
     event_source_url: clean(body.sourceUrl, 400) || 'https://urbanprotect.vercel.app/forms',
     user_data: userData,
     custom_data: {
-      content_name: clean(answers.servico, 120),
-      vehicle: clean(answers.veiculo, 120),
-      purchase_timeframe: clean(answers.prioridade, 120),
-      lead_temperature: clean(body.temperature, 20),
+      content_name: a.servico,
+      vehicle: a.veiculo,
+      purchase_timeframe: a.prioridade,
+      lead_temperature: temperature,
       lead_quality: 'qualificado'
     }
   };
@@ -76,12 +108,48 @@ module.exports = async function handler(req, res) {
     const r = await fetch(`https://graph.facebook.com/${API_VERSION}/${PIXEL_ID}/events?access_token=${encodeURIComponent(token)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(TIMEOUT_MS)
     });
     const out = await r.json().catch(() => ({}));
-    if (!r.ok) return res.status(502).json({ ok: false, error: 'meta', detail: out && out.error ? { code: out.error.code, message: out.error.message } : null });
-    return res.status(200).json({ ok: true, sent: true, received: out.events_received, test: !!payload.test_event_code });
+    if (!r.ok) return { ok: false, error: 'meta', detail: out && out.error ? { code: out.error.code, message: out.error.message } : null };
+    return { ok: true, received: out.events_received, test: !!payload.test_event_code };
   } catch (e) {
-    return res.status(502).json({ ok: false, error: 'rede' });
+    return { ok: false, error: 'rede' };
   }
+}
+
+module.exports = async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'method' });
+
+  let body = req.body;
+  if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
+  body = body || {};
+  const raw = body.answers || {};
+  const a = {
+    nome: clean(raw.nome, 120),
+    whatsapp: clean(raw.whatsapp, 30),
+    veiculo: clean(raw.veiculo, 120),
+    servico: clean(raw.servico, 120),
+    prioridade: clean(raw.prioridade, 120),
+    valor: clean(raw.valor, 120)
+  };
+  // Precisa ter respondido o formulário até a pergunta do valor.
+  if (!a.valor || !a.veiculo || !a.servico || !a.prioridade) return res.status(400).json({ ok: false, error: 'dados' });
+
+  const qualified = body.qualified === true;
+  const phone = normalizePhone(a.whatsapp);
+  // Qualificado sempre tem nome e WhatsApp; quem não concordou com o valor não deixa contato.
+  if (qualified && (!phone || !a.nome)) return res.status(400).json({ ok: false, error: 'contato' });
+
+  const temperature = ['quente', 'morno', 'frio'].includes(body.temperature) ? body.temperature : (qualified ? 'morno' : 'frio');
+
+  const [group, meta] = await Promise.all([
+    notifyGroup(buildGroupMessage(a, temperature, qualified, qualified ? phone : '')),
+    qualified ? sendToMeta(req, body, a, phone, temperature) : Promise.resolve({ ok: true, skipped: 'nao-qualificado' })
+  ]);
+
+  const ok = group.ok !== false || meta.ok !== false;
+  return res.status(200).json({ ok, group: group.ok, meta: meta.skipped ? 'ignorado' : (meta.ok ? 'enviado' : meta.error || 'erro'), test: !!meta.test });
 };
