@@ -63,7 +63,8 @@ module.exports = async function handler(req, res) {
     custom_data: {
       content_name: clean(answers.servico, 120),
       vehicle: clean(answers.veiculo, 120),
-      purchase_timeframe: clean(answers.prazo, 120),
+      purchase_timeframe: clean(answers.prioridade, 120),
+      lead_temperature: clean(body.temperature, 20),
       lead_quality: 'qualificado'
     }
   };
