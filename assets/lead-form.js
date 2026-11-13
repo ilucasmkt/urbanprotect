@@ -19,7 +19,7 @@
     redirectToWhatsApp: true,
     price: {
       title: 'Show! Vamos entrar em contato com você!',
-      text: 'Nós somos credenciados da AVG, visando a melhor qualidade possível para o seu carro, e os nossos serviços de PPF partem a partir de R$ 7.600,00, podendo ser parcelado em até 12x se preferir.',
+      text: 'Nós somos credenciados da AVG, visando a melhor qualidade possível para o seu carro, e os nossos serviços de PPF partem de R$ 7.600,00, podendo ser parcelado em até 12x se preferir.',
       question: 'Esse valor faz sentido para você?',
       yes: 'Sim, já conheço os produtos',
       no: 'Não, procuro algo mais em conta'
