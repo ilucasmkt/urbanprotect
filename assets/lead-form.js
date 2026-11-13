@@ -197,6 +197,9 @@
     var eventId = 'lead-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
     var lead = { answers: answers, text: text, createdAt: new Date().toISOString(), page: location.href, clickText: currentText, qualified: qualified, eventId: eventId };
     try { window.UP_LEAD_HOOKS.onSubmit(lead); } catch (err) {}
+    if (typeof window.gtag === 'function') {
+      try { window.gtag('event', 'generate_lead', { qualificado: qualified ? 'sim' : 'nao', servico: answers.servico || '', prazo: answers.prazo || '' }); } catch (err) {}
+    }
     // Pixel no navegador (só se qualificado) + mesmo evento pelo servidor (API de Conversões).
     if (qualified && typeof window.fbq === 'function') {
       try { window.fbq('track', 'Lead', { content_name: answers.servico || '', lead_quality: 'qualificado' }, { eventID: eventId }); } catch (err) {}
