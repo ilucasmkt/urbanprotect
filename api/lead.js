@@ -38,7 +38,6 @@ function buildGroupMessage(a, temperature, qualified, phone) {
   if (a.nome) lines.push('👤 *Nome:* ' + a.nome);
   if (phone) {
     lines.push('📱 *WhatsApp:* ' + (a.whatsapp || phone));
-    lines.push('💬 https://wa.me/' + phone);
   } else {
     lines.push('📵 *Contato:* não deixou (não concordou com o valor)');
   }
