@@ -6,8 +6,6 @@
 //
 // Variáveis de ambiente (configuradas na Vercel, NUNCA no código):
 //   META_CAPI_TOKEN        token de acesso do Pixel
-//   META_TEST_EVENT_CODE   código do "Testar eventos" (ex.: TEST4053). Enquanto existir, os
-//                          eventos aparecem só na aba de testes e NÃO contam nas campanhas.
 //   URBAN_LEAD_SECRET      chave do aviso no grupo (a mesma configurada no CRM)
 const crypto = require('crypto');
 
@@ -102,7 +100,8 @@ async function sendToMeta(req, body, a, phone, temperature) {
   };
 
   const payload = { data: [event] };
-  if (process.env.META_TEST_EVENT_CODE) payload.test_event_code = process.env.META_TEST_EVENT_CODE;
+  // Modo de teste DESLIGADO: os eventos valem de verdade nas campanhas.
+  // (Para testar de novo, é preciso religar esta linha no código; a variável META_TEST_EVENT_CODE da Vercel é ignorada.)
 
   try {
     const r = await fetch(`https://graph.facebook.com/${API_VERSION}/${PIXEL_ID}/events?access_token=${encodeURIComponent(token)}`, {
